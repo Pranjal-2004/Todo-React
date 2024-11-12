@@ -8,6 +8,10 @@ function ToDoApp() {
     const [completedList, setCompletedList] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [selectedTaskToDelete, setSelectedTaskToDelete] = useState(null);
+    const [deleteFromList, setDeleteFromList] = useState(''); // New state to track the list of the task to be deleted
+    const [isEditing, setIsEditing] = useState(false);
+    const [selectedTaskToEdit, setSelectedTaskToEdit] = useState(null);
+    const [editedTask, setEditedTask] = useState('');
 
     useEffect(() => {
         loadTasks();
@@ -56,25 +60,49 @@ function ToDoApp() {
         localStorage.removeItem('completedList');
     };
 
-    const openModal = (taskItem) => {
+    const openModal = (taskItem, listName) => {
         setSelectedTaskToDelete(taskItem);
+        setDeleteFromList(listName); // Set the list from which the task will be deleted
         setShowModal(true);
     };
 
     const confirmDelete = () => {
-        const updatedTaskList = taskList.filter(t => t !== selectedTaskToDelete);
-        const updatedInProgressList = inProgressList.filter(t => t !== selectedTaskToDelete);
-        const updatedCompletedList = completedList.filter(t => t !== selectedTaskToDelete);
-
-        setTaskList(updatedTaskList);
-        setInProgressList(updatedInProgressList);
-        setCompletedList(updatedCompletedList);
-
-        updateLocalStorage('taskList', updatedTaskList);
-        updateLocalStorage('inProgressList', updatedInProgressList);
-        updateLocalStorage('completedList', updatedCompletedList);
+        if (deleteFromList === 'taskList') {
+            const updatedTaskList = taskList.filter(t => t !== selectedTaskToDelete);
+            setTaskList(updatedTaskList);
+            updateLocalStorage('taskList', updatedTaskList);
+        } else if (deleteFromList === 'inProgressList') {
+            const updatedInProgressList = inProgressList.filter(t => t !== selectedTaskToDelete);
+            setInProgressList(updatedInProgressList);
+            updateLocalStorage('inProgressList', updatedInProgressList);
+        } else if (deleteFromList === 'completedList') {
+            const updatedCompletedList = completedList.filter(t => t !== selectedTaskToDelete);
+            setCompletedList(updatedCompletedList);
+            updateLocalStorage('completedList', updatedCompletedList);
+        }
 
         setShowModal(false);
+    };
+
+    const editTask = (taskItem, list) => {
+        setIsEditing(true);
+        setSelectedTaskToEdit({ taskItem, list });
+        setEditedTask(taskItem);
+    };
+
+    const confirmEdit = () => {
+        if (!editedTask.trim()) return;
+
+        const { taskItem, list } = selectedTaskToEdit;
+        const updateList = (currentList) => currentList.map(item => item === taskItem ? editedTask : item);
+
+        if (list === 'taskList') setTaskList(updateList(taskList));
+        else if (list === 'inProgressList') setInProgressList(updateList(inProgressList));
+        else if (list === 'completedList') setCompletedList(updateList(completedList));
+
+        updateLocalStorage(list, updateList(eval(list)));
+        setIsEditing(false);
+        setEditedTask('');
     };
 
     return (
@@ -100,8 +128,9 @@ function ToDoApp() {
                         <li key={index}>
                             {taskItem}
                             <span>
-                                <button className='prg-btn'onClick={() => moveToProgress(taskItem)}>Progress</button>
-                                <button className='del-btn'onClick={() => openModal(taskItem)}>Delete</button>
+                                <button className='prg-btn' onClick={() => moveToProgress(taskItem)}>Progress</button>
+                                <button className='edit-btn' onClick={() => editTask(taskItem, 'taskList')}>Edit</button>
+                                <button className='del-btn' onClick={() => openModal(taskItem, 'taskList')}>Delete</button>
                             </span>
                         </li>
                     ))}
@@ -114,8 +143,9 @@ function ToDoApp() {
                         <li key={index}>
                             {taskItem}
                             <span>
-                                <button className='cmp-btn'onClick={() => markCompleted(taskItem)}>Completed</button>
-                                <button className='del-btn'onClick={() => openModal(taskItem)}>Delete</button>
+                                <button className='cmp-btn' onClick={() => markCompleted(taskItem)}>Completed</button>
+                                <button className='edit-btn' onClick={() => editTask(taskItem, 'inProgressList')}>Edit</button>
+                                <button className='del-btn' onClick={() => openModal(taskItem, 'inProgressList')}>Delete</button>
                             </span>
                         </li>
                     ))}
@@ -127,6 +157,7 @@ function ToDoApp() {
                     {completedList.map((taskItem, index) => (
                         <li key={index}>
                             {taskItem}.......Task Completed
+                            <button className='del-btn' onClick={() => openModal(taskItem, 'completedList')}>Delete</button>
                         </li>
                     ))}
                 </ul>
@@ -137,8 +168,23 @@ function ToDoApp() {
                 <div className="modal">
                     <div className="modal-content">
                         <span onClick={() => setShowModal(false)} className="close">Close</span>
-                        <h3>Are you sure you want to delete</h3>
-                        <button onClick={confirmDelete} className="ok">OK</button>
+                        <h3>Are you sure you want to delete?</h3>
+                        <button onClick={confirmDelete} className="ok">Yes</button>
+                    </div>
+                </div>
+            )}
+
+            {isEditing && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <span onClick={() => setIsEditing(false)} className="close">Close</span>
+                        <h3>Edit Task</h3>
+                        <input
+                            type="text"
+                            value={editedTask}
+                            onChange={(e) => setEditedTask(e.target.value)}
+                        />
+                        <button onClick={confirmEdit} className="ok">Save</button>
                     </div>
                 </div>
             )}

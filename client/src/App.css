@@ -80,7 +80,7 @@ li {
   background-color: #f9f9f9;
 }
 
-button.prg-btn, button.del-btn, button.cmp-btn {
+button.prg-btn, button.del-btn, button.cmp-btn, button.edit-btn {
   border: none;
   padding: 10px;
   font-size: 14px;
@@ -101,6 +101,11 @@ button.del-btn {
 
 button.cmp-btn {
   background-color: #000000;
+  color: white;
+}
+
+button.edit-btn {
+  background-color: #4CAF50;
   color: white;
 }
 
